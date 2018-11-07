@@ -5,7 +5,7 @@
 clearvars, clc
 
 % Initial Conditions and Time Span
-dt = .1; n = 50; t = 0:dt:(n-1)*dt; % Time Step, seconds
+dt = .1; n = 101; t = 0:dt:(n-1)*dt; % Time Step, seconds
 m1 = [0 0]'; m2 = [10 0]'; m3 = [10 10]'; m4 = [0 10]';
 m = [m1 m2 m3 m4];
 Q = 0.01*eye(3); R = .1*eye(8);
@@ -41,9 +41,10 @@ Cfunc = {@(m,mu_pred,u,dt)(mu_pred(1)-m(1,1))/norm(mu_pred(1:2)-m(:,1),2), @(m,m
 xtrue(:,1) = x0;
 for ii = 2:n      
     % Simulate State and Noisy Sensor Dynamics
+    W = chol(Q)*randn(length(xfunc),1); % Process Noise
     V = chol(R)*randn(length(yfunc),1); % Sensor Noise
     for mm = 1:length(xfunc)
-        xtrue(mm,ii) = xfunc{mm}(m,xtrue(:,ii-1),u(ii-1),dt); % Propagate Dynamics (No Noise)
+        xtrue(mm,ii) = xfunc{mm}(m,xtrue(:,ii-1),u(ii-1),dt) + W(mm); % Propagate Dynamics (With Noise)
     end
     for mm = 1:length(yfunc)
         ytrue(mm,ii) = yfunc{mm}(m,xtrue(:,ii),u(ii-1),dt) + V(mm); % Make Observations (With Noise)
@@ -64,7 +65,7 @@ options = optimoptions('fminunc','Display','iter','Algorithm','trust-region','Sp
 %[solution,Jval] = lsqnonlin(func,z0,options);
 
 x = reshape(solution(:),length(x0),n); % Independent (Optimizing) Variable
-figure(1),hold on
+figure,hold on
 subplot(3,1,1),plot(t,xtrue(1,:),t,x(1,:)),xlabel('Time (s)'),ylabel('p_x'), title('Batch Estimation Results')
 subplot(3,1,2),plot(t,xtrue(2,:),t,x(2,:)),xlabel('Time (s)'),ylabel('p_y')
 subplot(3,1,3),plot(t,xtrue(3,:),t,x(3,:)),xlabel('Time (s)'),ylabel('\theta')

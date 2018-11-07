@@ -4,6 +4,8 @@ function [J,g,H] = batch_cost(z,xfunc,yfunc,Afunc,Cfunc,x0,Q,R,u,tspan,m)
 % Inputs:
 %	xfunc - Function handle for state equation
 %   yfunc - Function handle for sensor equation
+%   Afunc - State Dynamics Jacobian
+%   Cfunc - Measurement Equation Jacobian
 %   x0 - Initial State Conditions
 %   Q - Process Noise Covariance
 %   R - Sensor Noise Covariance
@@ -12,7 +14,9 @@ function [J,g,H] = batch_cost(z,xfunc,yfunc,Afunc,Cfunc,x0,Q,R,u,tspan,m)
 %   m - Map Features
 %
 % Outputs:
-%   J - Cost Function Value
+%   J - Cost Function Scalar Value
+%   g - Cost Function Gradient
+%   H - Cost Function Hessian
 
 n = length(tspan);
 dt = tspan(2)-tspan(1);
@@ -31,7 +35,7 @@ J = 0;
 
 %% Simulate Running Cost to Optimize
 for kk = 1:(n-1)      
-    % Simulate Noisy State and Sensor Dynamics
+    % Simulate State and Noisy Sensor Dynamics
     V = chol(R)*randn(length(yfunc),1); % Sensor Noise
     for mm = 1:length(xfunc)
         fxp(mm,kk) = xfunc{mm}(m,xp(:,kk),u(kk),dt); % Propagate Each Decision Variable w/ Model x = f(x)
